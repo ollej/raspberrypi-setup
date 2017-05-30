@@ -1,0 +1,87 @@
+---
+# ansible-playbook setup_pizero.yml -l raspberrypi.local -e "hostname=foobar"
+- hosts: raspberrypi.local
+  remote_user: pi
+
+  vars:
+    ansible_ssh_pass: raspberry
+
+  vars_prompt:
+    - name: "hostname"
+      private: no
+      prompt: "Which hostname to set on Raspberry Pi?"
+
+  tasks:
+    - name: Update apt cache
+      apt: update_cache=yes upgrade=yes
+      become: true
+
+    - name: Install required packages
+      apt: name={{ item }} state=present
+      become: true
+      with_items:
+        - curl
+        - vim
+        - git-core
+        - pkg-config
+        - build-essential
+        - python3
+        - python3-pip
+        - python3-dev
+        - openssl
+        - libssl-dev
+        - i2c-tools
+        - python-smbus
+        - ntpdate
+        - ca-certificates
+
+    - name: Update hostname
+      hostname:
+        name: "{{ hostname }}"
+      become: true
+      when: hostname
+
+    - name: Update hosts
+      lineinfile:
+        dest: /etc/hosts
+        regexp: '^127.0.1.1\s'
+        line: "127.0.1.1  {{ hostname }}"
+      become: true
+      when: hostname
+
+    - name: Update ntp server
+      command: ntpdate -u pool.ntp.org
+      become: true
+
+    - name: Add authorized_key for the pi user
+      authorized_key:
+        user: pi
+        key: "{{ item }}"
+      with_file:
+        - ~/.ssh/id_rsa.pub
+
+    - name: Disable password login via SSH
+      lineinfile: dest=/etc/ssh/sshd_config regexp=^#?PasswordAuthentication line="PasswordAuthentication no"
+      become: true
+
+    - name: Disable HDMI
+      blockinfile:
+        dest: /etc/rc.local
+        insertbefore: "^exit 0"
+        block: |
+          # Disable HDMI
+          wifi_loaded=`dmesg | grep "ieee80211"`
+          if [ -n "$wifi_loaded" ]; then
+               /usr/bin/tvservice -o
+          fi
+      become: true
+
+    - name: Setup i2c kernel module
+      lineinfile:
+        line: i2c-dev
+        dest: /etc/modules
+
+    - name: Enable i2c
+      lineinfile:
+        line: dtparam=i2c_arm=on
+        dest: /boot/config.txt

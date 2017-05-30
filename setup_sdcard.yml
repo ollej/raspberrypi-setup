@@ -1,0 +1,43 @@
+---
+# ansible-playbook setup_sdcard.yml -l localhost
+- hosts: localhost
+
+  tasks:
+    - stat:
+        path: /Volumes/boot
+      register: bootstat
+
+    - fail:
+        msg: "SD card not mounted at /Volumes/boot"
+      when: bootstat.stat.isdir is not defined or not bootstat.stat.isdir
+
+    - name: Activate SSH
+      file:
+        dest: /Volumes/boot/ssh
+        state: touch
+      delegate_to: localhost
+
+    - name: Update WiFi config
+      copy:
+        src: files/wpa_supplicant.conf
+        dest: /Volumes/boot/wpa_supplicant.conf
+      delegate_to: localhost
+
+    - name: Activate ethernet over USB
+      lineinfile:
+        dest: "/Volumes/boot/config.txt"
+        line: "dtoverlay=dwc2"
+      delegate_to: localhost
+
+    - name: Add ethernet over USB module
+      replace:
+        dest: /Volumes/boot/cmdline.txt
+        regexp: "rootwait quiet"
+        replace: "rootwait modules-load=dwc2,g_ether quiet"
+      delegate_to: localhost
+
+    - name: Disable Bluetooth
+      lineinfile:
+        dest: /Volumes/boot/config.txt
+        line: "dtoverlay=pi3-disable-bt"
+      delegate_to: localhost
