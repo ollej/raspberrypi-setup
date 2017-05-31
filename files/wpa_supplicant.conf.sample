@@ -1,0 +1,4 @@
+network={
+ssid="Your Wifi Name"
+psk="wifi password"
+}
