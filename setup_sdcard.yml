@@ -23,11 +23,11 @@
         dest: /Volumes/boot/wpa_supplicant.conf
       delegate_to: localhost
 
-    - name: Activate ethernet over USB
-      lineinfile:
-        dest: "/Volumes/boot/config.txt"
-        line: "dtoverlay=dwc2"
-      delegate_to: localhost
+      #    - name: Activate ethernet over USB
+      #      lineinfile:
+      #        dest: "/Volumes/boot/config.txt"
+      #        line: "dtoverlay=dwc2"
+      #      delegate_to: localhost
 
     - name: Add ethernet over USB module
       replace:

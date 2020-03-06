@@ -12,34 +12,34 @@
       prompt: "Which hostname to set on Raspberry Pi?"
 
   tasks:
-    - name: Update apt cache
-      apt: update_cache=yes upgrade=yes
-      become: true
-
     - name: Install required packages
-      apt: name={{ item }} state=present
       become: true
-      with_items:
-        - curl
-        - vim
-        - git-core
-        - pkg-config
-        - build-essential
-        - python3
-        - python3-pip
-        - python3-dev
-        - openssl
-        - libssl-dev
-        - i2c-tools
-        - python-smbus
-        - ntpdate
-        - ca-certificates
+      apt:
+        state: present
+        update_cache: yes
+        autoremove: true
+        autoclean: true
+        pkg:
+          - curl
+          - vim
+          - git-core
+          - pkg-config
+          - build-essential
+          - python3
+          - python3-pip
+          - python3-dev
+          - openssl
+          - libssl-dev
+          - i2c-tools
+          - python-smbus
+          - ntpdate
+          - ca-certificates
 
     - name: Update hostname
       hostname:
         name: "{{ hostname }}"
       become: true
-      when: hostname
+      when: hostname is defined and hostname
 
     - name: Update hosts
       lineinfile:
@@ -47,7 +47,7 @@
         regexp: '^127.0.1.1\s'
         line: "127.0.1.1  {{ hostname }}"
       become: true
-      when: hostname
+      when: hostname is defined and hostname
 
     - name: Update ntp server
       command: ntpdate -u pool.ntp.org
@@ -64,24 +64,26 @@
       lineinfile: dest=/etc/ssh/sshd_config regexp=^#?PasswordAuthentication line="PasswordAuthentication no"
       become: true
 
-    - name: Disable HDMI
-      blockinfile:
-        dest: /etc/rc.local
-        insertbefore: "^exit 0"
-        block: |
-          # Disable HDMI
-          wifi_loaded=`dmesg | grep "ieee80211"`
-          if [ -n "$wifi_loaded" ]; then
-               /usr/bin/tvservice -o
-          fi
-      become: true
+      # - name: Disable HDMI
+      #   blockinfile:
+      #     dest: /etc/rc.local
+      #     insertbefore: "^exit 0"
+      #     block: |
+      #       # Disable HDMI
+      #       wifi_loaded=`dmesg | grep "ieee80211"`
+      #       if [ -n "$wifi_loaded" ]; then
+      #            /usr/bin/tvservice -o
+      #       fi
+      #   become: true
 
     - name: Setup i2c kernel module
+      become: true
       lineinfile:
         line: i2c-dev
         dest: /etc/modules
 
     - name: Enable i2c
+      become: true
       lineinfile:
         line: dtparam=i2c_arm=on
         dest: /boot/config.txt
