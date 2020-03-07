@@ -1,0 +1,33 @@
+---
+# ansible-playbook setup_plex.yml -l raspberrypi.local
+- hosts: plexpi.local
+  remote_user: pi
+
+  tasks:
+    - name: Add Plex repository key
+      become: true
+      apt_key:
+        url: https://downloads.plex.tv/plex-keys/PlexSign.key
+        state: present
+
+    - name: Add Plex repository
+      become: true
+      apt_repository:
+        repo: deb https://downloads.plex.tv/repo/deb public main
+        state: present
+
+    - name: Install Plex
+      become: true
+      apt:
+        state: present
+        update_cache: yes
+        autoremove: true
+        autoclean: true
+        pkg:
+          - plexmediaserver
+
+    - name: Restart plex
+      service:
+        name: plexmediaserver
+        state: restarted
+

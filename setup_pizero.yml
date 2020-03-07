@@ -34,6 +34,7 @@
           - python-smbus
           - ntpdate
           - ca-certificates
+          - apt-transport-https
 
     - name: Update hostname
       hostname:
