@@ -1,0 +1,18 @@
+---
+# ansible-playbook setup_hfs.yml -l raspberrypi.local
+- hosts: plexpi.local
+  remote_user: pi
+
+  tasks:
+    - name: Install HFS support
+      become: true
+      apt:
+        state: present
+        update_cache: yes
+        autoremove: true
+        autoclean: true
+        pkg:
+          - hfsplus
+          - hfsutils
+          - hfsprogs
+          - gdisk
